@@ -1,13 +1,13 @@
 #include "usb.h"
 #include "device.h"
-#include <thread>
+#include <uv.h>
 
 namespace NodeUsb {
 	libusb_context* usb_context;
-	std::thread usb_thread;
+	uv_thread_t usb_thread_id;
 	std::vector< Persistent<Object> > Usb::deviceList;
 	
-	void USBThreadFn(){
+	void USBThreadFn(void* v){
 		while(1) libusb_handle_events(usb_context);
 	}
 
@@ -75,8 +75,8 @@ namespace NodeUsb {
 		// Bindings to nodejs
 		NODE_SET_METHOD(target, "setDebugLevel", Usb::SetDebugLevel);
 		
-		usb_thread = std::thread(USBThreadFn);
-		usb_thread.detach();
+		uv_thread_create(&usb_thread_id, USBThreadFn, NULL);
+		//TODO: with C++11 thread, it had to be detached here. Is this necessary with uv_thread?
 		
 		Local<ObjectTemplate> devlist_tpl = ObjectTemplate::New();
 		devlist_tpl->SetAccessor(V8STR("length"), DeviceListLength);
