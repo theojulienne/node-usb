@@ -1,4 +1,5 @@
 #include "node_usb.h"
+#include "node_version.h"
 
 #define STRUCT_TO_V8(TARGET, STR, NAME) \
 		TARGET->Set(V8STR(#NAME), Uint32::New((STR).NAME), CONST_PROP);
@@ -8,7 +9,12 @@
 
 Handle<Object> makeBuffer(const unsigned char* ptr, unsigned length) {
 	HandleScope scope;
-	Buffer* buf = Buffer::New((const char*) ptr, length);
+
+#if NODE_VERSION_AT_LEAST(0,9,2)
+	Buffer* buf = Buffer::New((const char *)ptr, length);
+#else
+	Buffer* buf = Buffer::New((char*) ptr, length);
+#endif
 	Local<Object> global = Context::GetCurrent()->Global();
 
 	Local<Value> bufferConstructor = global->Get(V8SYM("Buffer"));
